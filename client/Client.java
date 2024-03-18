@@ -18,7 +18,7 @@ public class Client
 		// command(args);
 		if (args.length == 0)
 		{
-			System.out.println("Usage: java Client <command> [args]");
+			System.out.println("Please enter a command...");
 			return;
 		}
 		String command = args[0];
@@ -28,20 +28,47 @@ public class Client
 		{
             switch (command) {
 				case "list":
-					System.out.println("list");
-					// send the command to the server
 					out.println(command);
 					break;
 				case "put":
-					System.out.println("put");
-					System.out.println(args[1]);
+					sendFile(args[1], socket);
 					break;
 				default:
 					System.out.println(command + " not found...");
 					return;
             }
-			String response = in.readLine();
-			System.out.println(response);
+			String response;
+			while ((response = in.readLine()) != null)
+			{
+				System.out.println(response);
+			}
+		}
+	}
+
+	// subroutine that will send a file to the server
+	private static void sendFile(String fileName, Socket socket) throws IOException
+	{
+		System.out.println("Sending file " + fileName + " to server...");
+		File file = new File(fileName);
+		System.out.println("File exists: " + file.exists());
+		if (file.exists())
+		{
+			System.out.println("File exists...");
+			byte[] buffer = new byte[8192];
+			InputStream fis = new FileInputStream(file);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			OutputStream os = socket.getOutputStream();
+			int count;
+			while ((count = bis.read(buffer)) > 0)
+			{
+				os.write(buffer, 0, count);
+			}
+			os.write("END_OF_FILE".getBytes());
+			os.flush();
+		}
+		else
+		{
+			System.out.println("File does not exist...");
 		}
 	}
 }

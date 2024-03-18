@@ -26,18 +26,17 @@ public class Server
 	public static void main(String[] args) throws IOException
 	{
 		ExecutorService executor = Executors.newFixedThreadPool(20);
-		if (SERVER_DIR.mkdirs() && LOG_FILE.createNewFile())
+		if (LOG_FILE.createNewFile())
 		{
-			System.out.println("Server directory and log file created");
+			System.out.println("log file created");
 		} else
 		{
-			System.out.println("Server directory and log file already exist");
+			System.out.println("log file already exist");
 		}
 		try (ServerSocket serverSocket = new ServerSocket(PORT))
 		{
 			while (true)
 			{
-				System.out.println("Client connected");
 				Socket clientSocket = serverSocket.accept();
 				executor.submit(() -> handleClient(clientSocket));
 			}
@@ -54,23 +53,45 @@ public class Server
 			switch (request)
 			{
 				case "list":
-					response = String.join("\n", Objects.requireNonNull(SERVER_DIR.list()));
+					// list all files in the server directory with line breaks
+					if (SERVER_DIR.exists() && SERVER_DIR.isDirectory()) {
+						String[] files = SERVER_DIR.list();
+						if (files != null && files.length > 0) {
+							response = String.join("\n", files);
+						} else {
+							response = "No files found in the server directory.";
+						}
+					} else {
+						response = "Server directory does not exist.";
+					}
 					break;
 				case "put":
 					String fileName = in.readLine();
 					File file = new File(SERVER_DIR, fileName);
-					if (file.exists())
-					{
+					if (file.exists()) {
 						response = "Error: File already exists";
 					} else {
-						Files.copy((Path) in, file.toPath());
-						response = "File uploaded successfully";
+						try (FileOutputStream fos = new FileOutputStream(file))
+						{
+							byte[] buffer = new byte[8192];
+							InputStream is = clientSocket.getInputStream();
+							int count;
+							while ((count = is.read(buffer)) > 0)
+							{
+								if (new String(buffer, 0, count).contains("END_OF_FILE"))
+								{
+									fos.write(buffer, 0, count - "END_OF_FILE".length());
+									break;
+								}
+								fos.write(buffer, 0, count);
+							}
+							response = "File uploaded successfully";
+						}
 					}
 					break;
 				default:
 					response = "Invalid request";
 			}
-
 			out.println(response);
 			logRequest(clientSocket.getInetAddress().getHostAddress(), request);
 		} catch (IOException e)
