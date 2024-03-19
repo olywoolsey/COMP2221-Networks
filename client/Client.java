@@ -21,9 +21,21 @@ public class Client
 		{
             switch (command) {
 				case "list":
+					// send the command to the server
 					out.println(command);
 					break;
 				case "put":
+					// send the command to the server
+					out.println(command);
+					// check if a file was specified
+					if (args.length < 2)
+					{
+						System.out.println("Error: No file specified");
+						return;
+					}
+					// send the filename to the server
+					out.println(args[1]);
+					// send the file to the server
 					sendFile(args[1], socket);
 					break;
 				default:
@@ -41,12 +53,9 @@ public class Client
 	// subroutine that will send a file to the server
 	private static void sendFile(String fileName, Socket socket) throws IOException
 	{
-		System.out.println("Sending file " + fileName + " to server...");
 		File file = new File(fileName);
-		System.out.println("File exists: " + file.exists());
-		if (!file.exists())
+		if (file.exists())
 		{
-			System.out.println("File exists...");
 			byte[] buffer = new byte[8192];
 			InputStream fis = new FileInputStream(file);
 			BufferedInputStream bis = new BufferedInputStream(fis);
@@ -58,10 +67,10 @@ public class Client
 			}
 			os.write("END_OF_FILE".getBytes());
 			os.flush();
-		}
-		else
+		} else
 		{
-			System.out.println("File does not exist...");
+			System.out.println("Error: File does not exist...");
+			System.exit(1);
 		}
 	}
 }

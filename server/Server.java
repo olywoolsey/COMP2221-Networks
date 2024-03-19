@@ -43,6 +43,7 @@ public class Server
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true))
 		{
+
 			// Read the request from the client
 			String request = in.readLine();
 			// Process the request
@@ -54,32 +55,6 @@ public class Server
 				case "put":
 					out.println(putFile(in, clientSocket));
 					break;
-					/*
-					// Read the file name from the client
-					String fileName = in.readLine();
-					File file = new File(SERVER_DIR, fileName);
-					if (file.exists()) {
-						out.println("Error: File already exists");
-					} else {
-						try (FileOutputStream fos = new FileOutputStream(file))
-						{
-							byte[] buffer = new byte[8192];
-							InputStream is = clientSocket.getInputStream();
-							int count;
-							while ((count = is.read(buffer)) > 0)
-							{
-								if (new String(buffer, 0, count).contains("END_OF_FILE"))
-								{
-									fos.write(buffer, 0, count - "END_OF_FILE".length());
-									break;
-								}
-								fos.write(buffer, 0, count);
-							}
-							out.println("File uploaded successfully");
-						}
-					}
-					break;
-					*/
 				default:
 					// If request is not list or put, send an error message
 					out.println("Invalid request");
@@ -107,16 +82,26 @@ public class Server
 		}
 	}
 
-	private static String putFile(BufferedReader in, Socket clientSocket) throws IOException
+	private static String putFile(BufferedReader in, Socket clientSocket)  throws IOException
 	{
 		// Read the file name from the client
 		String fileName = in.readLine();
 		File file = new File(SERVER_DIR, fileName);
 		if (file.exists()) {
+			// Discard the file data from the client if file is already on server
+			byte[] buffer = new byte[8192];
+			InputStream is = clientSocket.getInputStream();
+			int count;
+			while ((count = is.read(buffer)) > 0) {
+				if (new String(buffer, 0, count).contains("END_OF_FILE")) {
+					break;
+				}
+			}
 			return "Error: File already exists";
 		} else {
 			try (FileOutputStream fos = new FileOutputStream(file))
 			{
+				// Write the file data from the client to the server
 				byte[] buffer = new byte[8192];
 				InputStream is = clientSocket.getInputStream();
 				int count;
