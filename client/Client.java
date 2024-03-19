@@ -1,11 +1,4 @@
-/* Requirements
-- Accepts one of the following commands as command line arguments, and performs the stated task:
-	- list, which lists all the files on the server’s folder serverFiles.
-	- put name, which uploads the file name to the server to be added to serverFiles(see above), or returns an error
-	  message to say that this file already exists.
-- Exits after completing each command
- */
-
+// file: Client.java
 import java.io.*;
 import java.net.*;
 
@@ -51,7 +44,7 @@ public class Client
 		System.out.println("Sending file " + fileName + " to server...");
 		File file = new File(fileName);
 		System.out.println("File exists: " + file.exists());
-		if (file.exists())
+		if (!file.exists())
 		{
 			System.out.println("File exists...");
 			byte[] buffer = new byte[8192];
