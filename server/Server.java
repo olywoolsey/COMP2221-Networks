@@ -1,6 +1,4 @@
-// file: Server.java
-
-// import required classes
+/ file: Server.java
 import java.io.*;
 import java.net.*;
 import java.text.SimpleDateFormat;
@@ -31,6 +29,7 @@ public class Server
 		{
 			while (true)
 			{
+				// Accept client connection
 				Socket clientSocket = serverSocket.accept();
 				// Handle each client connection in a separate thread
 				executor.submit(() -> handleClient(clientSocket));
@@ -43,7 +42,6 @@ public class Server
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true))
 		{
-
 			// Read the request from the client
 			String request = in.readLine();
 			// Process the request
@@ -84,7 +82,7 @@ public class Server
 
 	private static String putFile(BufferedReader in, Socket clientSocket)  throws IOException
 	{
-		// Read the file name from the client
+		// Read the file name from the client then create the file
 		String fileName = in.readLine();
 		File file = new File(SERVER_DIR, fileName);
 		if (file.exists()) {
@@ -97,7 +95,7 @@ public class Server
 					break;
 				}
 			}
-			return "Error: File already exists";
+			return "Error: Cannot upload file ’" + file.getName() + "’; already exists on server";
 		} else {
 			try (FileOutputStream fos = new FileOutputStream(file))
 			{
@@ -105,16 +103,19 @@ public class Server
 				byte[] buffer = new byte[8192];
 				InputStream is = clientSocket.getInputStream();
 				int count;
+				// While there is data to read from the client
 				while ((count = is.read(buffer)) > 0)
 				{
 					if (new String(buffer, 0, count).contains("END_OF_FILE"))
 					{
+						// Remove the "END_OF_FILE" string from the buffer
 						fos.write(buffer, 0, count - "END_OF_FILE".length());
 						break;
 					}
+					// Write the buffer to the file all at once
 					fos.write(buffer, 0, count);
 				}
-				return "File uploaded successfully";
+				return "Uploaded file " + file.getName();
 			}
 		}
 	}
